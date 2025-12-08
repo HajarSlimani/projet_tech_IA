@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mood Capture</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter',sans-serif; min-height:100vh; display:flex; justify-content:center; align-items:center; background: linear-gradient(135deg, #f8f9ff, #e2e8f0); padding:15px; }
+.app-container { width:100%; max-width:450px; padding:30px; background:white; border-radius:25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align:center; position:relative; }
+.greeting { font-size:28px; color:#333; margin-bottom:25px; font-weight:700; }
+#mainMoodIcon { 
+    width:130px; 
+    height:130px; 
+    border-radius:50%; 
+    display:flex; 
+    align-items:center; 
+    justify-content:center; 
+    margin:0 auto 12px; 
+    font-size:70px; 
+    color:white; 
+    position:relative; 
+    z-index:10; 
+    transition: transform 0.3s ease, background-color 0.3s ease; 
+    box-shadow:0 6px 20px rgba(0,0,0,0.15);
+}
+
+
+#moodLabel { font-size:17px; font-weight:600; color:#555; margin-bottom:25px; min-height: 20px; }
+.mood-arc { position:relative; height:110px; max-width:300px; margin:0 auto 30px; }
+.mood-node { 
+    position:absolute; 
+    width:45px; 
+    height:45px; 
+    border-radius:50%; 
+    display:flex; 
+    align-items:center; 
+    justify-content:center; 
+    font-size:20px; 
+    cursor:pointer; 
+    box-shadow:0 3px 10px rgba(0,0,0,0.15); 
+    transition: transform 0.3s, box-shadow 0.3s; 
+}
+.mood-node:hover { 
+    transform:scale(1.3) rotate(10deg); 
+    box-shadow:0 8px 20px rgba(0,0,0,0.3); 
+}
+.mood-node:nth-child(1) { left:0; top:40px; background-color:#ff6b6b; }
+.mood-node:nth-child(2) { left:50px; top:0; background-color:#ffcf4d; }
+.mood-node:nth-child(3) { right:50px; top:0; background-color:#80ed99; }
+.mood-node:nth-child(4) { right:0; top:40px; background-color:#ff914d; }
+.mood-node:nth-child(5) { left:120px; top:70px; background-color:#c1b6e4; }
+.dot { width:8px; height:8px; border-radius:50%; background-color:#ccc; position:absolute; top:60px; }
+.dot:nth-child(6){left:25px;} .dot:nth-child(7){left:80px;} .dot:nth-child(8){right:80px;} .dot:nth-child(9){right:25px;}
+.input-capture-area { display:flex; align-items:center; gap:10px; padding:10px 0; margin-bottom:20px; }
+.text-input-container { flex-grow:1; display:flex; align-items:center; background:#f0f0f0; border-radius:25px; padding:5px 15px; transition:box-shadow 0.3s; }
+.text-input-container:focus-within { box-shadow:0 0 12px #6a6fcf; }
+#moodText { border:none; background:transparent; width:100%; padding:8px 0; font-size:15px; outline:none; resize:none; overflow:hidden; height:35px; line-height:1.5; }
+.add-button { width:45px; height:45px; border-radius:50%; background:#6a6fcf; color:white; font-size:24px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; transition: transform 0.2s, box-shadow 0.2s; line-height:1; }
+.add-button:hover { transform:scale(1.2); box-shadow:0 5px 15px rgba(106,111,207,0.4); }
+#photoPreview { width: 150px; height: 150px; object-fit: cover; border-radius: 10px; margin: 15px auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: none; }
+#cameraContainer { display: none; margin: 15px auto; text-align: center; }
+#cameraVideo { width: 100%; max-width: 300px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+#captureButton { margin-top: 10px; padding: 10px 20px; background: #6a6fcf; color: white; border: none; border-radius: 10px; cursor: pointer; }
+#nextStepButton { display:block; width:100%; padding:16px 0; background:linear-gradient(90deg,#6a6fcf,#8b5cf6); color:white; border:none; border-radius:15px; font-size:18px; font-weight:600; cursor:pointer; text-transform:uppercase; text-align:center; text-decoration:none; box-shadow:0 5px 15px rgba(106,111,207,0.4); transition: all 0.3s; }
+#nextStepButton:hover { transform:translateY(-3px); box-shadow:0 10px 25px rgba(106,111,207,0.5); }
+#nextStepButton:disabled { opacity: 0.5; cursor: not-allowed; } 
+.message { margin-top:15px; font-size:16px; color:#6a6fcf; font-weight:600; min-height: 20px; }
+</style>
+</head>
+<body>
+
+<div class="app-container" id="appContainer">
+    <div class="greeting">What is your mood?</div>
+    <div class="mood-selector-container">
+        <div id="mainMoodIcon" style="background-color: #ff914d;" draggable="true">😄</div>
+        <div id="moodLabel">Super happy</div>
+        <div class="mood-arc">
+            <div class="mood-node" data-mood="Angry" data-icon="😠" data-color="#ff6b6b">😠</div>
+            <div class="mood-node" data-mood="Sad" data-icon="😥" data-color="#ffcf4d">😥</div>
+            <div class="mood-node" data-mood="Calm" data-icon="😌" data-color="#80ed99">😌</div>
+            <div class="mood-node" data-mood="Happy" data-icon="😄" data-color="#ff914d">😄</div>
+            <div class="mood-node" data-mood="Tired" data-icon="😴" data-color="#c1b6e4">😴</div>
+            <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        </div>
+    </div>
+
+    <img id="photoPreview" alt="Aperçu de la photo">
+    <div id="cameraContainer">
+        <video id="cameraVideo" autoplay playsinline></video>
+        <button id="captureButton">Capturer la photo</button>
+    </div>
+    <div class="input-capture-area">
+        <div class="text-input-container">
+            <input type="text" id="moodText" placeholder="Express your mood here..." />
+        </div>
+        <button class="add-button" id="addButton">+</button>
+    </div>
+    <div class="message" id="userMessage"></div>
+    <button id="nextStepButton" disabled>Next Step</button>
+</div>
+
+<script>
+const mainMoodIcon = document.getElementById('mainMoodIcon');
+const moodLabel = document.getElementById('moodLabel');
+const moodNodes = document.querySelectorAll('.mood-node');
+const addButton = document.getElementById('addButton');
+const userMessage = document.getElementById('userMessage');
+const moodText = document.getElementById('moodText');
+const photoPreview = document.getElementById('photoPreview');
+const cameraContainer = document.getElementById('cameraContainer');
+const cameraVideo = document.getElementById('cameraVideo');
+const captureButton = document.getElementById('captureButton');
+const nextStepButton = document.getElementById('nextStepButton');
+
+const moods = Array.from(moodNodes).map(node => ({
+    mood: node.getAttribute('data-mood'),
+    icon: node.getAttribute('data-icon'),
+    color: node.getAttribute('data-color')
+}));
+
+let currentIndex = 3; 
+let autoChangeInterval;
+let stream;
+let detectedEmotion = 'happy'; 
+let capturedImageBase64 = null; 
+
+
+const API_BASE_URL = 'https://inclement-ferdinand-hyperstoical.ngrok-free.dev'; 
+const API_ENDPOINT = API_BASE_URL + '/analyze_mood';
+
+function updateMainMood(moodIndex) {
+    const mood = moods[moodIndex];
+    mainMoodIcon.textContent = mood.icon;
+    mainMoodIcon.style.backgroundColor = mood.color;
+    moodLabel.textContent = mood.mood;
+    mainMoodIcon.style.transform = 'scale(1.1)';
+    setTimeout(()=>mainMoodIcon.style.transform='scale(1)',200);
+    currentIndex = moodIndex;
+}
+
+function changeMoodAutomatically() {
+    currentIndex = (currentIndex + 1) % moods.length;
+    updateMainMood(currentIndex);
+}
+function startAutoChange() {
+    if(autoChangeInterval) clearInterval(autoChangeInterval);
+    autoChangeInterval = setInterval(changeMoodAutomatically, 3000);
+}
+startAutoChange();
+updateMainMood(currentIndex); 
+
+mainMoodIcon.addEventListener('dragstart', (e) => {
+    e.dataTransfer.setData('text/plain', 'mainMoodIcon');
+    mainMoodIcon.classList.add('dragging'); 
+    clearInterval(autoChangeInterval);
+});
+
+mainMoodIcon.addEventListener('dragend', () => {
+    mainMoodIcon.classList.remove('dragging');
+    if (nextStepButton.disabled) {
+        startAutoChange();
+    }
+});
+
+moodNodes.forEach((node, index) => {
+    
+    node.addEventListener('click', () => {
+        clearInterval(autoChangeInterval);
+        updateMainMood(index);
+    });
+
+    node.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        node.classList.add('highlight'); 
+    });
+
+    node.addEventListener('dragover', (e) => {
+        e.preventDefault();
+    });
+
+    node.addEventListener('dragleave', () => {
+        node.classList.remove('highlight');
+    });
+
+    node.addEventListener('drop', (e) => {
+        e.preventDefault();
+        node.classList.remove('highlight');
+        if (e.dataTransfer.getData('text/plain') === 'mainMoodIcon') {
+         
+            updateMainMood(index); 
+        }
+    });
+});
+
+async function analyzeMood(payload){
+    userMessage.textContent = 'Analyse en cours... ⏳';
+    clearInterval(autoChangeInterval);
+    nextStepButton.disabled = true;
+    
+    try{
+        const bodyPayload = {
+            text: payload.text || "", 
+            image: payload.image || ""
+        };
+
+        const response = await fetch(API_ENDPOINT,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify(bodyPayload)
+        });
+        
+        if(!response.ok) {
+             const errorData = await response.json().catch(() => ({ message: response.statusText }));
+             throw new Error(`Erreur HTTP: ${response.status} - ${errorData.error || response.statusText}`);
+        }
+        
+        const result = await response.json();
+        
+        const emotion = result.label.toLowerCase();
+        const score = (result.score*100).toFixed(2);
+        
+        detectedEmotion = emotion;
+        
+        let matchedMood = moods.find(m => m.mood.toLowerCase() === emotion)
+                             || { mood: result.label, icon:'🤔', color:'#6a6fcf' };
+
+        mainMoodIcon.textContent = matchedMood.icon;
+        mainMoodIcon.style.backgroundColor = matchedMood.color;
+        moodLabel.textContent = `${matchedMood.mood.toUpperCase()} (Score: ${score}%)`;
+        userMessage.textContent = `Analyse terminée ! Votre humeur: ${matchedMood.mood}.`;
+        
+        nextStepButton.disabled = false;
+        
+    }catch(err){
+        console.error("Erreur d'analyse API:", err);
+        userMessage.textContent = ` Erreur API: ${err.message || 'Serveur indisponible'}`;
+        startAutoChange();
+        nextStepButton.disabled = true;
+    }
+}
+
+addButton.addEventListener('click', async () => {
+    if (stream && cameraContainer.style.display === 'block') {
+        captureButton.click();
+        return;
+    }
+    
+    if (moodText.value.trim() !== '') {
+        analyzeMood({ 
+            text: moodText.value.trim(), 
+            image: capturedImageBase64 || "" 
+        });
+        
+    } else {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'user' } 
+            }); 
+            cameraVideo.srcObject = stream;
+            cameraContainer.style.display = 'block';
+            photoPreview.style.display = 'none';
+            userMessage.textContent = 'Caméra ouverte. Cliquez sur le bouton central (+) ou "Capturer".';
+        } catch (err) {
+            console.error('Erreur accès caméra:', err);
+            userMessage.textContent = 'Impossible d\'accéder à la caméra. Vérifiez les permissions.';
+        }
+    }
+});
+
+// --- Capture de la photo ---
+captureButton.addEventListener('click', () => {
+    if (!stream) {
+        userMessage.textContent = 'La caméra n\'est pas démarrée.';
+        return;
+    }
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = cameraVideo.videoWidth;
+    canvas.height = cameraVideo.videoHeight;
+    ctx.drawImage(cameraVideo, 0, 0, canvas.width, canvas.height);
+    
+    const imageData = canvas.toDataURL('image/jpeg', 0.9);
+
+    // Arrêter la caméra après la capture
+    stream.getTracks().forEach(track => track.stop());
+    cameraContainer.style.display = 'none';
+    stream = null;
+    
+    // Stocker et afficher l'image
+    capturedImageBase64 = imageData;
+    photoPreview.src = imageData;
+    photoPreview.style.display = 'block';
+
+    // Lancer l'analyse avec le texte et l'image capturée
+    analyzeMood({ 
+        text: moodText.value || "", 
+        image: capturedImageBase64
+    });
+});
+
+moodText.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){
+        analyzeMood({ 
+            text:moodText.value.trim(), 
+            image: capturedImageBase64 || "" 
+        });
+        e.preventDefault();
+    }
+});
+
+// --- Redirection vers la page de recommandations ---
+nextStepButton.addEventListener('click', () => {
+    if (detectedEmotion) {
+        // Stocker l'émotion dans localStorage
+        localStorage.setItem('detectedEmotion', detectedEmotion);
+        
+        // Rediriger vers rec1.html
+        window.location.href = 'rec1.html';
+    }
+});
+</script>
+</body>
+</html>

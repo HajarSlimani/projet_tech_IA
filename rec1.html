@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Recommendations Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #ffffff;
+            display: flex;
+            justify-content: center;
+            padding: 20px 0;
+            min-height: 100vh;
+        }
+        .app-container {
+            width: 95%;
+            max-width: 1200px;
+            background: #fff;
+            min-height: 90vh; 
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 20px;
+        }
+        .header-title {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .back-btn {
+            padding: 10px 20px;
+            background: #f0f0ff;
+            color: #667eea;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .back-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+        .personal-greeting {
+            padding: 20px;
+            font-size: 18px;
+            color: #333;
+            font-weight: 600;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        .mood-summary {
+            color: #667eea;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        #status-message {
+            text-align: center;
+            padding: 30px;
+            font-size: 1.2em;
+            color: #667eea;
+            font-weight: 600;
+            background: #f0f0ff;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+        .status-error {
+            background: #ffe0e0 !important;
+            color: #d32f2f !important;
+        }
+        .status-success {
+            background: #e0ffe0 !important;
+            color: #2e7d32 !important;
+        }
+        .tabs {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 15px;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            margin-bottom: 25px;
+        }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab {
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 15px;
+            font-weight: 700;
+            flex-shrink: 0;
+            border: none;
+            background: #e9ecf0;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .tab:hover {
+            background: #d0d4db;
+            transform: translateY(-2px);
+        }
+        .tab.active { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; 
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        .recommendation-content {
+            display: grid;
+            grid-template-columns: 1fr; 
+            gap: 20px;
+        }
+        @media(min-width: 600px){
+            .recommendation-content {
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            }
+        }
+        .reco-section {
+            display: none;
+        }
+        .reco-section.active {
+            display: grid;
+        }
+        .detail-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-left: 6px solid;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .detail-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, currentColor, transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .detail-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+        .detail-card:hover::before {
+            opacity: 1;
+        }
+        .reco-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .reco-icon-box {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            transition: transform 0.3s;
+        }
+        .detail-card:hover .reco-icon-box {
+            transform: scale(1.1) rotate(5deg);
+        }
+        .reco-title { 
+            font-size: 19px; 
+            font-weight: 800; 
+            color: #2c2c2c; 
+            line-height: 1.3; 
+        }
+        .reco-subtitle { 
+            font-size: 13px; 
+            color: #666; 
+            font-weight: 500; 
+            margin-top: 4px;
+        }
+        .reco-subtitle a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .reco-subtitle a:hover {
+            text-decoration: underline;
+        }
+        .reco-ia-explanation-title { 
+            font-size: 15px; 
+            font-weight: 700; 
+            color: #333; 
+            margin-top: 15px; 
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .reco-ia-explanation { 
+            font-size: 14px; 
+            color: #555; 
+            line-height: 1.6; 
+            padding: 12px; 
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 10px; 
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+        .reco-movie { border-left-color: #ff9800; } 
+        .reco-music { border-left-color: #9c27b0; } 
+        .reco-dish { border-left-color: #4caf50; } 
+        .reco-activity { border-left-color: #f44336; }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">
+        <div class="header-title">🎭 Mood Recommender</div>
+        <a href="index1.html" class="back-btn">← Nouvelle analyse</a>
+    </div>
+
+    <div class="personal-greeting" id="personal-greeting">
+        <span id="greeting-text">Chargement...</span>
+    </div>
+    
+    <div id="status-message">
+        <span class="loading-spinner"></span>
+        Chargement des recommandations...
+    </div>
+
+    <div class="tabs" id="tabs-container" style="display: none;"></div>
+    <div class="recommendation-content" id="recommendation-content"></div>
+</div>
+
+<script>
+// === URL API ===
+const API_BASE_URL = 'https://inclement-ferdinand-hyperstoical.ngrok-free.dev';
+
+const statusMessage = document.getElementById('status-message');
+const greetingText = document.getElementById('greeting-text');
+const tabsContainer = document.getElementById('tabs-container');
+const contentContainer = document.getElementById('recommendation-content');
+
+const detectedEmotion = localStorage.getItem('detectedEmotion');
+
+if (!detectedEmotion) {
+    window.location.href = 'index.html';
+}
+
+const emotionMessages = {
+    'happy': {
+        greeting: "Quelle belle énergie ! 😊 Profitez de cette joie avec des activités stimulantes et inspirantes 🌟",
+        explanation: "Cette sélection est conçue pour amplifier votre joie et partager votre bonne humeur avec le monde."
+    },
+    'sad': {
+        greeting: "Nous comprenons que vous traversez un moment difficile 💙 Voici des suggestions réconfortantes pour apaiser votre cœur 🌙",
+        explanation: "Ces recommandations douces vous aideront à traverser cette période et à retrouver progressivement la paix intérieure."
+    },
+    'angry': {
+        greeting: "Votre colère est légitime 🔥 Canalisez cette énergie de manière constructive avec ces suggestions 💪",
+        explanation: "Ces activités vous permettront de libérer sainement votre tension et de transformer votre colère en force positive."
+    },
+    'anxious': {
+        greeting: "Prenez une grande respiration 🌿 Voici des ressources apaisantes pour calmer votre esprit 🧘‍♀️",
+        explanation: "Ces suggestions sont spécialement choisies pour réduire votre stress et vous ramener à un état de sérénité."
+    },
+    'fear': {
+        greeting: "Vous n'êtes pas seul(e) dans cette peur 🤗 Découvrez des moyens de vous sentir en sécurité et rassuré(e) 🛡️",
+        explanation: "Ces recommandations vous aideront à retrouver confiance et à apaiser vos inquiétudes progressivement."
+    },
+    'neutral': {
+        greeting: "Un moment d'équilibre parfait ⚖️ Explorez de nouvelles expériences pour enrichir votre journée ✨",
+        explanation: "Profitez de cet état d'esprit stable pour découvrir de nouvelles choses et vous inspirer."
+    },
+    'surprise': {
+        greeting: "L'inattendu fait partie de la vie ! 🎉 Embrassez cette surprise avec curiosité et ouverture d'esprit 🌈",
+        explanation: "Ces suggestions vous accompagneront dans cette expérience nouvelle et stimulante."
+    },
+    'joy': {
+        greeting: "Quelle joie éclatante ! 🌞 Savourez chaque instant avec ces suggestions énergisantes et inspirantes 🎊",
+        explanation: "Célébrez ce moment de bonheur avec des expériences qui amplifient votre euphorie positive."
+    },
+    'disgust': {
+        greeting: "Besoin d'un nouveau départ ? 🌱 Voici des suggestions pour vous rafraîchir l'esprit et renouveler votre perspective 🍃",
+        explanation: "Ces recommandations vous aideront à vous sentir mieux et à dépasser ce sentiment désagréable."
+    }
+};
+
+const showStatus = (message, type = 'info') => {
+    statusMessage.innerHTML = message;
+    statusMessage.className = '';
+    if (type === 'error') statusMessage.classList.add('status-error');
+    if (type === 'success') statusMessage.classList.add('status-success');
+    statusMessage.style.display = 'block';
+};
+
+const hideStatus = () => {
+    statusMessage.style.display = 'none';
+};
+
+const createCard = (title, subtitle, icon, explanation, type, emotion, isLink = false) => {
+    
+    const emotionData = emotionMessages[emotion] || emotionMessages['neutral'];
+    
+    let subtitleHtml = isLink 
+        ? `<a href="${subtitle}" target="_blank" rel="noopener">🎵 Écouter sur Spotify</a>` 
+        : subtitle;
+
+    return `
+        <div class="detail-card reco-${type}">
+            <div class="reco-header">
+                <div class="reco-icon-box">${icon}</div>
+                <div style="flex: 1;">
+                    <div class="reco-title">${title}</div>
+                    <div class="reco-subtitle">${subtitleHtml}</div>
+                </div>
+            </div>
+            <div class="reco-ia-explanation-title">💡 Pourquoi cette recommandation ?</div>
+            <div class="reco-ia-explanation">${explanation || emotionData.explanation}</div>
+        </div>
+    `;
+};
+
+const updateUI = (data) => {
+    hideStatus();
+    
+    const emotion = data.emotion.toLowerCase();
+    const emotionData = emotionMessages[emotion] || emotionMessages['neutral'];
+    greetingText.innerHTML = emotionData.greeting;
+    
+    tabsContainer.innerHTML = ''; 
+    contentContainer.innerHTML = ''; 
+    tabsContainer.style.display = 'flex';
+
+    const recoTypes = [
+        { key: 'movies', label: 'Films', icon: '🎬', type: 'movie' },
+        { key: 'music', label: 'Musiques', icon: '🎧', type: 'music' },
+        { key: 'meal', label: 'Plats', icon: '🍜', type: 'dish' },
+        { key: 'activity', label: 'Conseils', icon: '🧘', type: 'activity' }
+    ];
+
+    recoTypes.forEach((type, index) => {
+        const isFirst = index === 0;
+
+        const tabButton = document.createElement('button');
+        tabButton.className = `tab ${isFirst ? 'active' : ''}`;
+        tabButton.textContent = `${type.icon} ${type.label}`;
+        tabButton.dataset.target = type.key;
+        tabsContainer.appendChild(tabButton);
+
+        const sectionDiv = document.createElement('div');
+        sectionDiv.id = type.key;
+        sectionDiv.className = 'reco-section';
+        sectionDiv.style.display = isFirst ? 'grid' : 'none'; 
+
+        let htmlContent = '';
+        const items = data[type.key];
+
+        if (Array.isArray(items)) {
+            items.forEach(item => {
+                let title, subtitle, isLink = false;
+                
+                if (type.key === 'music') {
+                    title = item.name;
+                    subtitle = item.url;
+                    isLink = true;
+                } else if (type.key === 'movies') {
+                    title = item.title;
+                    subtitle = `Note: ${item.rating}/10 (${item.release_date})`;
+                    isLink = false;
+                } else if (type.key === 'meal' || type.key === 'activity') {
+                    title = item; 
+                    subtitle = type.key === 'meal' ? 'Recette Recommandée' : 'Conseil Bien-être';
+                    isLink = false;
+                }
+                
+                const expl = emotionData.explanation; 
+                
+                htmlContent += createCard(title, subtitle, type.icon, expl, type.type, emotion, isLink);
+            });
+        }
+        sectionDiv.innerHTML = htmlContent;
+        contentContainer.appendChild(sectionDiv);
+    });
+
+    setupTabs();
+};
+
+// === Gestion des onglets ===
+const setupTabs = () => {
+    const tabs = document.querySelectorAll('#tabs-container .tab');
+    const sections = document.querySelectorAll('#recommendation-content .reco-section');
+
+    const switchTab = (targetId) => {
+        tabs.forEach(tab => tab.classList.remove('active'));
+        sections.forEach(section => section.style.display = 'none');
+        
+        const targetTab = document.querySelector(`.tab[data-target="${targetId}"]`);
+        if (targetTab) targetTab.classList.add('active');
+        
+        const targetSection = document.getElementById(targetId);
+        if(targetSection) targetSection.style.display = 'grid';
+    };
+
+    tabs.forEach(tab => tab.addEventListener('click', () => switchTab(tab.dataset.target)));
+};
+
+// === Chargement des recommandations ===
+const fetchRecommendations = async (emotion) => {
+    showStatus(`<span class="loading-spinner"></span>Chargement de vos recommandations personnalisées...`);
+
+    try {
+        const url = `${API_BASE_URL}/get_recommendations/${emotion}`;
+        console.log('Requête vers:', url);
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'ngrok-skip-browser-warning': 'true' 
+            }
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(' Erreur HTTP:', response.status, errorText);
+            throw new Error(`Erreur ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Données reçues:', data);
+        
+        updateUI(data);
+        showStatus(' Recommandations chargées avec succès !', 'success');
+        setTimeout(hideStatus, 3000);
+
+    } catch (error) {
+        console.error(" Erreur:", error);
+        showStatus(
+            `Impossible de charger les recommandations.<br><br>
+            <strong>Détails:</strong> ${error.message}<br><br>
+            Veuillez vérifier que le serveur est démarré.`,
+            'error'
+        );
+    }
+};
+
+// === Initialisation ===
+document.addEventListener('DOMContentLoaded', () => {
+    console.log(' Émotion détectée:', detectedEmotion);
+    fetchRecommendations(detectedEmotion);
+});
+</script>
+</body>
+</html>
