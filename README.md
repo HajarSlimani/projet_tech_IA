@@ -22,11 +22,11 @@ L’objectif est d’accompagner et améliorer l’état émotionnel de l’util
 ##  Interface de l'application
 
 ### Détection par texte
-(screenshots/detection_texte.png)
+!(screenshots/detection_texte.png)
 
 ### Détection par visage
-(screenshots/detection_image.png)
+!(screenshots/detection_image.png)
 
 ### Recommandations
-(screenshots/recommendations.png)
+!(screenshots/recommendations.png)
 
