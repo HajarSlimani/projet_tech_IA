@@ -19,14 +19,4 @@ L’objectif est d’accompagner et améliorer l’état émotionnel de l’util
   * API Spotify (playlists)
   * Base locale (activités et repas)
  
-##  Interface de l'application
-
-### Détection par texte
-!(screenshots/datection_texte.jpeg)
-
-### Détection par visage
-!(screenshots/detection_image.png)
-
-### Recommandations
-!(screenshots/recommendations.png)
 
